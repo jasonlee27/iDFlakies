@@ -5,6 +5,7 @@ import com.opencsv.CSVReader;
 import com.reedoei.eunomia.collections.ListEx;
 import edu.illinois.cs.dt.tools.detection.detectors.Detector;
 import edu.illinois.cs.dt.tools.detection.detectors.DetectorFactory;
+import edu.illinois.cs.dt.tools.detection.Logger;
 import edu.illinois.cs.dt.tools.runner.InstrumentingSmartRunner;
 import edu.illinois.cs.dt.tools.utility.ErrorLogger;
 import edu.illinois.cs.dt.tools.utility.GetMavenTestOrder;
@@ -18,6 +19,7 @@ import edu.illinois.cs.testrunner.runner.Runner;
 import edu.illinois.cs.testrunner.runner.RunnerFactory;
 import edu.illinois.cs.testrunner.testobjects.TestLocator;
 import edu.illinois.cs.testrunner.util.ProjectWrapper;
+import edu.illinois.cs.dt.tools.detection.jdeps.ODFlakyTestCandidatesMojo;
 import scala.collection.JavaConverters;
 
 import java.io.FileInputStream;
@@ -266,7 +268,8 @@ public class DetectorPlugin extends TestPlugin {
         if (this.runner == null) {
             this.runner = InstrumentingSmartRunner.fromRunner(runners.get(0));
         }
-        final List<String> tests = getOriginalOrder(project, this.runner.framework());
+        List<String> allTests = getOriginalOrder(project, this.runner.framework());
+        final List<String> tests = ODFlakyTestCandidatesMojo.filterOriginalOrder(allTests, project);
 
         if (!tests.isEmpty()) {
             Files.createDirectories(outputPath);
