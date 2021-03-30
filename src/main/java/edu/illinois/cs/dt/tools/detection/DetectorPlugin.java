@@ -21,6 +21,7 @@ import edu.illinois.cs.testrunner.testobjects.TestLocator;
 import edu.illinois.cs.testrunner.util.ProjectWrapper;
 import edu.illinois.cs.dt.tools.detection.jdeps.ODFlakyTestCandidatesMojo;
 import scala.collection.JavaConverters;
+import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -212,7 +213,7 @@ public class DetectorPlugin extends TestPlugin {
         logger.runAndLogError(() -> detectorExecute(logger, project, moduleRounds(coordinates)));
     }
 
-    private Void detectorExecute(final ErrorLogger logger, final ProjectWrapper project, final int rounds) throws IOException {
+    private Void detectorExecute(final ErrorLogger logger, final ProjectWrapper project, final int rounds) throws IOException, MojoExecutionException {
         Files.deleteIfExists(DetectorPathManager.errorPath());
         Files.createDirectories(DetectorPathManager.cachePath());
         Files.createDirectories(DetectorPathManager.detectionResults());

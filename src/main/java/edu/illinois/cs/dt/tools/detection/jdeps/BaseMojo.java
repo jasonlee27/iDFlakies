@@ -14,6 +14,7 @@ import edu.illinois.cs.dt.tools.detection.helpers.RTSUtil;
 import edu.illinois.cs.dt.tools.detection.Logger;
 import edu.illinois.cs.testrunner.configuration.Configuration;
 import edu.illinois.yasgl.DirectedGraph;
+import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.surefire.AbstractSurefireMojo;
@@ -85,9 +86,10 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
     protected String loggingLevel = Configuration.config().getProperty("dt.detector.jdeps.startsLogging", "CONFIG");
     private Classpath sureFireClassPath;
 
-    protected void printResult(Set<String> set, String title) {
-        Writer.writeToLog(set, title, Logger.getGlobal());
-    }
+    protected File classDir = getClassesDirectory();
+    protected File testClassDir = getTestClassesDirectory();
+    protected ArtifactRepository localRepository = getLocalRepository();
+
 
     public String getArtifactsDir() throws MojoExecutionException {
         if (artifactsDir == null) {
@@ -260,5 +262,9 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
         DirectoryScanner classScanner = new DirectoryScanner(getClassesDirectory(), new TestListResolver(STAR));
         DefaultScanResult scanResult = classScanner.scan().append(testScanner.scan());
         return scanResult.getFiles();
+    }
+
+    protected void printResult(Set<String> set, String title) {
+        Writer.writeToLog(set, title, Logger.getGlobal());
     }
 }

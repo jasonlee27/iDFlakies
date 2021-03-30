@@ -18,6 +18,7 @@ import edu.illinois.yasgl.DirectedGraph;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.surefire.booter.Classpath;
+import org.apache.maven.plugin.surefire.AbstractSurefireMojo;
 
 import java.util.HashSet;
 import java.util.List;
@@ -35,14 +36,14 @@ public class DiffMojo extends BaseMojo implements StartsConstants {
      * Checksums" Sections in the Ekstazi paper:
      * http://dl.acm.org/citation.cfm?id=2771784
      */
-    protected boolean cleanBytes = Configuration.config().getProperty("dt.detector.jdeps.cleanBytes", true);
+    public boolean cleanBytes = Configuration.config().getProperty("dt.detector.jdeps.cleanBytes", true);
 
     /**
      * Set this to "true" to update test dependencies on disk. The default value of "false"
      * is useful for "dry runs" where one may want to see the diff without updating
      * the test dependencies.
      */
-    protected boolean updateDiffChecksums = Configuration.config().getProperty("dt.detector.jdeps.updateDiffChecksums", false);
+    public boolean updateDiffChecksums = Configuration.config().getProperty("dt.detector.jdeps.updateDiffChecksums", false);
 
     public void diff_execute() throws MojoExecutionException {
         Logger.getGlobal().setLoggingLevel(Level.parse(loggingLevel));
@@ -63,7 +64,7 @@ public class DiffMojo extends BaseMojo implements StartsConstants {
         }
     }
 
-    protected Pair<Set<String>, Set<String>> computeChangeData(boolean writeChanged) throws MojoExecutionException {
+    public Pair<Set<String>, Set<String>> computeChangeData(boolean writeChanged) throws MojoExecutionException {
         long start = System.currentTimeMillis();
         Pair<Set<String>, Set<String>> data = null;
         if (depFormat == DependencyFormat.ZLC) {
@@ -81,7 +82,7 @@ public class DiffMojo extends BaseMojo implements StartsConstants {
         return data;
     }
 
-    protected void updateForNextRun(Set<String> nonAffected) throws MojoExecutionException {
+    public void updateForNextRun(Set<String> nonAffected) throws MojoExecutionException {
         long start = System.currentTimeMillis();
         Classpath sfClassPath = getSureFireClassPath();
         String sfPathString = Writer.pathToString(sfClassPath.getClassPath());
@@ -122,7 +123,7 @@ public class DiffMojo extends BaseMojo implements StartsConstants {
     }
 
     public void save(String artifactsDir, Set<String> affectedTests, List<String> testClasses,
-                     String sfPathString, DirectedGraph<String> graph) {
+                            String sfPathString, DirectedGraph<String> graph) {
         int globalLogLevel = Logger.getGlobal().getLoggingLevel().intValue();
         if (globalLogLevel <= Level.FINER.intValue()) {
             Writer.writeToFile(testClasses, "all-tests", artifactsDir);
