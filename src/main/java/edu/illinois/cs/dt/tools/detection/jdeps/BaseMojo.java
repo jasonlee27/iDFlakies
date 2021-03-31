@@ -5,16 +5,10 @@
 package edu.illinois.cs.dt.tools.detection.jdeps;
 
 import edu.illinois.cs.dt.tools.constants.StartsConstants;
-import edu.illinois.cs.dt.tools.detection.helpers.DependencyFormat;
-import edu.illinois.cs.dt.tools.detection.helpers.Writer;
-import edu.illinois.cs.dt.tools.detection.helpers.PomUtil;
-import edu.illinois.cs.dt.tools.detection.helpers.Cache;
-import edu.illinois.cs.dt.tools.detection.helpers.Loadables;
-import edu.illinois.cs.dt.tools.detection.helpers.RTSUtil;
+import edu.illinois.cs.dt.tools.detection.Pair;
+import edu.illinois.cs.dt.tools.detection.helpers.*;
 import edu.illinois.cs.dt.tools.detection.Logger;
-import edu.illinois.cs.testrunner.configuration.Configuration;
 import edu.illinois.yasgl.DirectedGraph;
-import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.surefire.AbstractSurefireMojo;
@@ -27,6 +21,9 @@ import org.apache.maven.surefire.booter.SurefireExecutionException;
 import org.apache.maven.surefire.testset.TestListResolver;
 import org.apache.maven.surefire.util.DefaultScanResult;
 
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import edu.illinois.cs.testrunner.configuration.Configuration;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -37,63 +34,80 @@ import java.util.logging.Level;
 /**
  * Base MOJO for the JDeps-Based STARTS.
  */
-abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
+public class BaseMojo extends SurefirePlugin implements StartsConstants {
     static final String STAR = "*";
     /**
      * Set this to "false" to not filter out "sun.*" and "java.*" classes from jdeps parsing.
      */
-    protected boolean filterLib = Configuration.config().getProperty("dt.detector.jdeps.filterLib", true);
-
+    public boolean filterLib = Configuration.config().getProperty("dt.detector.jdeps.filterLib", true);
 
     /**
      * Set this to "false" to not add jdeps edges from 3rd party-libraries.
      */
-    protected boolean useThirdParty = Configuration.config().getProperty("dt.detector.jdeps.useThirdParty", false);
+    public boolean useThirdParty = Configuration.config().getProperty("dt.detector.jdeps.useThirdParty", false);
 
     /**
      * The directory in which to store STARTS artifacts that are needed between runs.
      */
-    protected String artifactsDir;
+    public String artifactsDir;
 
     /**
      * Allows to switch the format in which we want to store the test dependencies.
      * A full list of what we currently support can be found in
      * @see edu.illinois.starts.enums.DependencyFormat
      */
-    protected String depFormatString = Configuration.config().getProperty("dt.detector.jdeps.depFormat", "ZLC");
-    protected DependencyFormat depFormat = depFormatString=="ZLC" ? DependencyFormat.ZLC: DependencyFormat.CLZ;
+    public String depFormatString = Configuration.config().getProperty("dt.detector.jdeps.depFormat", "ZLC");
+    public DependencyFormat depFormat = depFormatString=="ZLC" ? DependencyFormat.ZLC: DependencyFormat.CLZ;
 
     /**
      * Path to directory that contains the result of running jdeps on third-party
      * and standard library jars that an application may need, e.g., those in M2_REPO.
      */
-    protected String graphCache = Configuration.config().getProperty("dt.detector.jdeps.graphCache", "${basedir}${file.separator}jdeps-cache");
+    public String graphCache = Configuration.config().getProperty("dt.detector.jdeps.graphCache", "${basedir}${file.separator}jdeps-cache");
 
     /**
      * Set this to "false" to not print the graph obtained from jdeps parsing.
      * When "true" the graph is written to file after the run.
      */
-    protected boolean printGraph = Configuration.config().getProperty("dt.detector.jdeps.printGraph", true);
+    public boolean printGraph = Configuration.config().getProperty("dt.detector.jdeps.printGraph", true);
 
     /**
      * Output filename for the graph, if printGraph == true.
      */
-    protected String graphFile = Configuration.config().getProperty("dt.detector.jdeps.graphFile", "graph");
+    public String graphFile = Configuration.config().getProperty("dt.detector.jdeps.graphFile", "graph");
 
     /**
      * Log levels as defined in java.util.logging.Level.
      */
-    protected String loggingLevel = Configuration.config().getProperty("dt.detector.jdeps.startsLogging", "CONFIG");
-    private Classpath sureFireClassPath;
+    public String loggingLevel = Configuration.config().getProperty("dt.detector.jdeps.startsLogging", "CONFIG");
 
-    protected File classDir = getClassesDirectory();
-    protected File testClassDir = getTestClassesDirectory();
-    protected ArtifactRepository localRepository = getLocalRepository();
+    /**
+     * Set this to "false" to disable smart hashing, i.e., to *not* strip
+     * Bytecode files of debug info prior to computing checksums. See the "Smart
+     * Checksums" Sections in the Ekstazi paper:
+     * http://dl.acm.org/citation.cfm?id=2771784
+     */
+    public boolean cleanBytes = Configuration.config().getProperty("dt.detector.jdeps.cleanBytes", true);
 
+    public Classpath sureFireClassPath;
+
+    public MavenProject accessedProject;
+    public File baseDir;
+    public File classDir;
+    public File testClassDir;
+    public ArtifactRepository localRepository;
+
+    public BaseMojo(){
+        accessedProject = getProject();
+        baseDir = basedir;
+        classDir = getClassesDirectory();
+        testClassDir = getTestClassesDirectory();
+        localRepository = getLocalRepository();
+    }
 
     public String getArtifactsDir() throws MojoExecutionException {
         if (artifactsDir == null) {
-            artifactsDir = basedir.getAbsolutePath() + File.separator + STARTS_DIRECTORY_PATH;
+            artifactsDir = baseDir.getAbsolutePath() + File.separator + STARTS_DIRECTORY_PATH;
             File file = new File(artifactsDir);
             if (!file.mkdirs() && !file.exists()) {
                 throw new MojoExecutionException("I could not create artifacts dir: " + artifactsDir);
@@ -102,23 +116,13 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
         return artifactsDir;
     }
 
-    public void setIncludesExcludes() throws MojoExecutionException {
-        long start = System.currentTimeMillis();
-        try {
-            Field projectField = AbstractSurefireMojo.class.getDeclaredField("project");
-            projectField.setAccessible(true);
-            MavenProject accessedProject = (MavenProject) projectField.get(this);
-            List<String> includes = PomUtil.getFromPom("include", accessedProject);
-            List<String> excludes = PomUtil.getFromPom("exclude", accessedProject);
-            Logger.getGlobal().log(Level.FINEST, "@@Excludes: " + excludes);
-            Logger.getGlobal().log(Level.FINEST,"@@Includes: " + includes);
-            setIncludes(includes);
-            setExcludes(excludes);
-        } catch (NoSuchFieldException nsfe) {
-            nsfe.printStackTrace();
-        } catch (IllegalAccessException iae) {
-            iae.printStackTrace();
-        }
+    public void setIncludesExcludes() throws MojoExecutionException { long start = System.currentTimeMillis();
+        List<String> includes = PomUtil.getFromPom("include", accessedProject);
+        List<String> excludes = PomUtil.getFromPom("exclude", accessedProject);
+        Logger.getGlobal().log(Level.FINEST, "@@Excludes: " + excludes);
+        Logger.getGlobal().log(Level.FINEST,"@@Includes: " + includes);
+        setIncludes(includes);
+        setExcludes(excludes);
         long end = System.currentTimeMillis();
         Logger.getGlobal().log(Level.FINE, "[PROFILE] updateForNextRun(setIncludesExcludes): "
                 + Writer.millsToSeconds(end - start));
@@ -193,7 +197,7 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
         long start = System.currentTimeMillis();
         if (sureFireClassPath == null) {
             try {
-                sureFireClassPath = new Classpath(getProject().getTestClasspathElements());
+                sureFireClassPath = new Classpath(accessedProject.getTestClasspathElements());
             } catch (DependencyResolutionRequiredException drre) {
                 drre.printStackTrace();
             }
@@ -208,7 +212,7 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
     public Result prepareForNextRun(String sfPathString, Classpath sfClassPath, List<String> classesToAnalyze,
                                     Set<String> nonAffected, boolean computeUnreached) throws MojoExecutionException {
         long start = System.currentTimeMillis();
-        String m2Repo = getLocalRepository().getBasedir();
+        String m2Repo = localRepository.getBasedir();
         File jdepsCache = new File(graphCache);
         // We store the jdk-graphs at the root of "jdepsCache" directory, with
         // jdk.graph being the file that merges all the graphs for all standard
@@ -257,14 +261,87 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
         return new Result(transitiveClosure, loadables.getGraph(), affected, loadables.getUnreached());
     }
 
-    protected List<String> getAllClasses() {
-        DirectoryScanner testScanner = new DirectoryScanner(getTestClassesDirectory(), new TestListResolver(STAR));
-        DirectoryScanner classScanner = new DirectoryScanner(getClassesDirectory(), new TestListResolver(STAR));
+    public List<String> getAllClasses() {
+        DirectoryScanner testScanner = new DirectoryScanner(testClassDir, new TestListResolver(STAR));
+        DirectoryScanner classScanner = new DirectoryScanner(classDir, new TestListResolver(STAR));
         DefaultScanResult scanResult = classScanner.scan().append(testScanner.scan());
         return scanResult.getFiles();
     }
 
-    protected void printResult(Set<String> set, String title) {
+    public void printResult(Set<String> set, String title) {
         Writer.writeToLog(set, title, Logger.getGlobal());
+    }
+
+
+
+    public Pair<Set<String>, Set<String>> computeChangeData(boolean writeChanged) throws MojoExecutionException {
+        long start = System.currentTimeMillis();
+        Pair<Set<String>, Set<String>> data = null;
+        if (depFormat == DependencyFormat.ZLC) {
+            ZLCHelper zlcHelper = new ZLCHelper();
+            data = zlcHelper.getChangedData(getArtifactsDir(), cleanBytes);
+        } else if (depFormat == DependencyFormat.CLZ) {
+            data = EkstaziHelper.getNonAffectedTests(getArtifactsDir());
+        }
+        Set<String> changed = data == null ? new HashSet<String>() : data.getValue();
+        if (writeChanged || Logger.getGlobal().getLoggingLevel().intValue() <= Level.FINEST.intValue()) {
+            Writer.writeToFile(changed, CHANGED_CLASSES, getArtifactsDir());
+        }
+        long end = System.currentTimeMillis();
+        Logger.getGlobal().log(Level.FINE, "[PROFILE] COMPUTING CHANGES: " + Writer.millsToSeconds(end - start));
+        return data;
+    }
+
+    public void updateForNextRun(Set<String> nonAffected) throws MojoExecutionException {
+        long start = System.currentTimeMillis();
+        Classpath sfClassPath = getSureFireClassPath();
+        String sfPathString = Writer.pathToString(sfClassPath.getClassPath());
+        setIncludesExcludes();
+        List<String> allTests = getTestClasses("updateForNextRun");
+        Set<String> affectedTests = new HashSet<>(allTests);
+        affectedTests.removeAll(nonAffected);
+        DirectedGraph<String> graph = null;
+        if (!affectedTests.isEmpty()) {
+            ClassLoader loader = createClassLoader(sfClassPath);
+            //TODO: set this boolean to true only for static reflectionAnalyses with * (border, string, naive)?
+            boolean computeUnreached = true;
+            Result result = prepareForNextRun(sfPathString, sfClassPath, allTests, nonAffected, computeUnreached);
+            Map<String, Set<String>> testDeps = result.getTestDeps();
+            graph = result.getGraph();
+            Set<String> unreached = computeUnreached ? result.getUnreachedDeps() : new HashSet<String>();
+            if (depFormat == DependencyFormat.ZLC) {
+                ZLCHelper zlcHelper = new ZLCHelper();
+                zlcHelper.updateZLCFile(testDeps, loader, getArtifactsDir(), unreached, useThirdParty);
+            } else if (depFormat == DependencyFormat.CLZ) {
+                // The next line is not needed with ZLC because '*' is explicitly tracked in ZLC
+                affectedTests = result.getAffectedTests();
+                if (affectedTests == null) {
+                    throw new MojoExecutionException("Affected tests should not be null with CLZ format!");
+                }
+                RTSUtil.computeAndSaveNewCheckSums(getArtifactsDir(), affectedTests, testDeps, loader);
+            }
+        }
+        save(getArtifactsDir(), affectedTests, allTests, sfPathString, graph);
+        printToTerminal(allTests, affectedTests);
+        long end = System.currentTimeMillis();
+        Logger.getGlobal().log(Level.FINE, PROFILE_UPDATE_FOR_NEXT_RUN_TOTAL + Writer.millsToSeconds(end - start));
+    }
+
+    public void printToTerminal(List<String> testClasses, Set<String> affectedTests) {
+        Logger.getGlobal().log(Level.INFO, STARTS_AFFECTED_TESTS + affectedTests.size());
+        Logger.getGlobal().log(Level.INFO, "STARTS:TotalTests: " + testClasses.size());
+    }
+
+    public void save(String artifactsDir, Set<String> affectedTests, List<String> testClasses,
+                     String sfPathString, DirectedGraph<String> graph) {
+        int globalLogLevel = Logger.getGlobal().getLoggingLevel().intValue();
+        if (globalLogLevel <= Level.FINER.intValue()) {
+            Writer.writeToFile(testClasses, "all-tests", artifactsDir);
+            Writer.writeToFile(affectedTests, "selected-tests", artifactsDir);
+        }
+        if (globalLogLevel <= Level.FINEST.intValue()) {
+            RTSUtil.saveForNextRun(artifactsDir, graph, printGraph, graphFile);
+            Writer.writeClassPath(sfPathString, artifactsDir);
+        }
     }
 }

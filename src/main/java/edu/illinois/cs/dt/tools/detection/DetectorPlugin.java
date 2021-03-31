@@ -6,6 +6,7 @@ import com.reedoei.eunomia.collections.ListEx;
 import edu.illinois.cs.dt.tools.detection.detectors.Detector;
 import edu.illinois.cs.dt.tools.detection.detectors.DetectorFactory;
 import edu.illinois.cs.dt.tools.detection.Logger;
+import edu.illinois.cs.dt.tools.detection.jdeps.BaseMojo;
 import edu.illinois.cs.dt.tools.runner.InstrumentingSmartRunner;
 import edu.illinois.cs.dt.tools.utility.ErrorLogger;
 import edu.illinois.cs.dt.tools.utility.GetMavenTestOrder;
@@ -22,7 +23,11 @@ import edu.illinois.cs.testrunner.util.ProjectWrapper;
 import edu.illinois.cs.dt.tools.detection.jdeps.ODFlakyTestCandidatesMojo;
 import scala.collection.JavaConverters;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.surefire.AbstractSurefireMojo;
+import org.apache.maven.plugin.surefire.SurefirePlugin;
+import org.apache.maven.project.MavenProject;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -270,7 +275,8 @@ public class DetectorPlugin extends TestPlugin {
             this.runner = InstrumentingSmartRunner.fromRunner(runners.get(0));
         }
         List<String> allTests = getOriginalOrder(project, this.runner.framework());
-        final List<String> tests = ODFlakyTestCandidatesMojo.filterOriginalOrder(allTests, project);
+        ODFlakyTestCandidatesMojo filter = new ODFlakyTestCandidatesMojo();
+        final List<String> tests = filter.filterOriginalOrder(allTests, project, new BaseMojo());
 
         if (!tests.isEmpty()) {
             Files.createDirectories(outputPath);
