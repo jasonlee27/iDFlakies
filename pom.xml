@@ -12,7 +12,6 @@
     
     <modules>
       <module>idflakies-core</module>
-      <module>starts-core</module>
       <module>idflakies-maven-plugin</module>
     </modules>
 

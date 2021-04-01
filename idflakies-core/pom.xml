@@ -118,6 +118,11 @@
           <artifactId>yasgl</artifactId>
           <version>1.2</version>
         </dependency>
+        <dependency>
+          <groupId>edu.illinois</groupId>
+          <artifactId>starts-core</artifactId>
+          <version>1.4-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <profiles>

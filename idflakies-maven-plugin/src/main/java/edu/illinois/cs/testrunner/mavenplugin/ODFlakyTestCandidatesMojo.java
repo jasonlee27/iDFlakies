@@ -1,12 +1,11 @@
 package edu.illinois.cs.testrunner.mavenplugin;
 
-import edu.illinois.starts.constants.StartsConstants;
 import edu.illinois.starts.helpers.Cache;
 import edu.illinois.starts.helpers.Loadables;
-import edu.illinois.starts.helpers.ODFlakyTestFinder;
 import edu.illinois.starts.helpers.Writer;
 import edu.illinois.starts.util.Pair;
-
+import edu.illinois.cs.dt.tools.detection.ODFlakyTestFinder;
+import edu.illinois.cs.dt.tools.constants.StartsConstants;
 import edu.illinois.cs.dt.tools.detection.DetectorPlugin;
 import edu.illinois.cs.testrunner.coreplugin.TestPluginUtil;
 import edu.illinois.cs.testrunner.util.ProjectWrapper;

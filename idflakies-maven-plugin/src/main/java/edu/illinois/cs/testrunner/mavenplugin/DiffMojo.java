@@ -4,7 +4,7 @@
 
 package edu.illinois.cs.testrunner.mavenplugin;
 
-import edu.illinois.starts.constants.StartsConstants;
+import edu.illinois.cs.dt.tools.constants.StartsConstants;
 import edu.illinois.starts.enums.DependencyFormat;
 import edu.illinois.starts.helpers.EkstaziHelper;
 import edu.illinois.starts.helpers.RTSUtil;

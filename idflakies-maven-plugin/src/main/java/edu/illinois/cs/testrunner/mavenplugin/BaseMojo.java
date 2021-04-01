@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
-import edu.illinois.starts.constants.StartsConstants;
+import edu.illinois.cs.dt.tools.constants.StartsConstants;
 import edu.illinois.starts.enums.DependencyFormat;
 import edu.illinois.starts.helpers.Cache;
 import edu.illinois.starts.helpers.Loadables;
