@@ -27,7 +27,7 @@ import java.util.logging.Level;
 /**
  * Finds tests affected by a change and OD-flaky test candidates and run iDFlakies.
  */
-@Mojo(name = "flakytest", requiresDirectInvocation = true, requiresDependencyResolution = ResolutionScope.TEST)
+@Mojo(name = "select", requiresDirectInvocation = true, requiresDependencyResolution = ResolutionScope.TEST)
 @Execute(phase = LifecyclePhase.TEST_COMPILE)
 public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstants {
     /**

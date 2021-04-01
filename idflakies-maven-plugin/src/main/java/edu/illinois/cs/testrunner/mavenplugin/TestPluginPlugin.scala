@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
 /**
  * @author Reed Oei
  */
-@Mojo(name = TestPluginUtil.pluginName,
+@Mojo(name = "original",
       defaultPhase = LifecyclePhase.TEST,
       requiresDependencyResolution = ResolutionScope.TEST)
 @Execute(phase = LifecyclePhase.TEST_COMPILE,
