@@ -2,7 +2,7 @@ target/
 **/.DS_Store
 **/.idea/
 *.iml
-./**/*.iml
+idflakies-maven-plugin/*.iml
 **/*~
 .*.swp
 *.o
