@@ -269,9 +269,14 @@ public class DetectorPlugin extends TestPlugin {
         System.out.println("[INFO] Getting original tests (" + allTests.size() + " tests).");
         System.out.println("[INFO] Getting filtered tests (" + tests.size() + " tests).");
 
+        // Write test list to file
+        Files.createDirectories(outputPath);
+        Files.write(DetectorPathManager.originalOrderPath(), String.join(System.lineSeparator(), allTests).getBytes());
+        Files.write(DetectorPathManager.selectedOrderPath(), String.join(System.lineSeparator(), tests).getBytes());
+
         if (!tests.isEmpty()) {
-            Files.createDirectories(outputPath);
-            Files.write(DetectorPathManager.originalOrderPath(), String.join(System.lineSeparator(), allTests).getBytes());
+//            Files.createDirectories(outputPath);
+//            Files.write(DetectorPathManager.originalOrderPath(), String.join(System.lineSeparator(), allTests).getBytes());
             final Detector detector = DetectorFactory.makeDetector(this.runner, tests, rounds);
             TestPluginUtil.project.info("Created dependent test detector (" + detector.getClass() + ").");
             detector.writeTo(outputPath);
