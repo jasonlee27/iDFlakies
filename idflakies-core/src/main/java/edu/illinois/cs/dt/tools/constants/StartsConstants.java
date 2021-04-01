@@ -73,10 +73,10 @@ public interface StartsConstants {
     String DEPSZLC_CLS_FILE_PREFIX = "file:";
     String DEPSZLC_JAR_FILE_PREFIX = "jar:"+DEPSZLC_CLS_FILE_PREFIX;
     String TGT_DIR_NAME = "target";
-    String TST_DIR_NAME = TGT_DIR_NAME + BACKSLASH + TEST_CLASSES;
-    String BLD_CLS_TXT_FILE = TGT_DIR_NAME + BACKSLASH + "build_classpath.txt";
+    String TST_DIR_NAME = TGT_DIR_NAME + File.separator + TEST_CLASSES;
+    String BLD_CLS_TXT_FILE = TGT_DIR_NAME + File.separator + "build_classpath.txt";
     String STARTS_DIR_NAME = ".starts";
-    String STARTS_TSTDEP_FILE = STARTS_DIR_NAME + BACKSLASH + "deps.zlc";
+    String ZLC_FILE = STARTS_DIRECTORY_PATH + "deps.zlc";
 
 
 }

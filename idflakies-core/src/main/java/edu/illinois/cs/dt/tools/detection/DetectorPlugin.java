@@ -3,6 +3,7 @@ package edu.illinois.cs.dt.tools.detection;
 import com.google.common.collect.Lists;
 import com.opencsv.CSVReader;
 import com.reedoei.eunomia.collections.ListEx;
+import edu.illinois.cs.dt.tools.constants.StartsConstants;
 import edu.illinois.cs.dt.tools.detection.detectors.Detector;
 import edu.illinois.cs.dt.tools.detection.detectors.DetectorFactory;
 import edu.illinois.cs.dt.tools.runner.InstrumentingSmartRunner;
@@ -291,10 +292,10 @@ public class DetectorPlugin extends TestPlugin {
 
     private List<String> filterOriginalOrder(List<String> allTests, Set<String> flakyTestCandidates) {
         List<String> resultTests = new ArrayList<>();
-        for (String testClass: flakyTestCandidates) {
-            for (String test: allTests) {
-                if (test.startsWith(testClass)) { resultTests.add(test); }
-            }
+        for (String test: allTests) {
+            int sepPos = test.lastIndexOf(StartsConstants.DOT);
+            String testClass = test.substring(0, sepPos);
+            if (flakyTestCandidates.contains(testClass)) { resultTests.add(test); }
         }
         return resultTests;
     }

@@ -130,7 +130,7 @@ public class ODFlakyTestFinder {
     }
 
     public static Map<String, String[]> getDepTests(MavenProject project, File classDir, File testClassDir) throws FileNotFoundException {
-        List<File> depFiles = FileUtil.findFileRec(project.getBasedir(), StartsConstants.STARTS_TSTDEP_FILE);
+        List<File> depFiles = FileUtil.findFileRec(project.getBasedir(), StartsConstants.ZLC_FILE);
         Map<String, String[]> result = new HashMap<>();
         for (File df: depFiles) {
             List<String> depLines = FileUtil.readTxtFile(df);

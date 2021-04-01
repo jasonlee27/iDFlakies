@@ -34,7 +34,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
      * "false" is useful for "dry runs" where one may want to see the affected
      * tests, without updating test dependencies.
      */
-    @Parameter(property = "updateSelectChecksums", defaultValue = FALSE)
+    @Parameter(property = "updateSelectChecksums", defaultValue = TRUE)
     private boolean updateSelectChecksums;
 
     @Parameter(defaultValue = "")
@@ -89,10 +89,13 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
 
         // Find OD-flaky test candidates
         Set<String> flakyTestCandidates = null;
-        try {
-            flakyTestCandidates = computeFlakyTestCandidates(affectedClassesUnderTest, affectedTests, project, classDir, testClassDir);
-        } catch (IOException | DependencyResolutionRequiredException e) {
-            e.printStackTrace();
+        File zlcFIle = new File(StartsConstants.ZLC_FILE);
+        if (zlcFIle.exists()) {
+            try {
+                flakyTestCandidates = computeFlakyTestCandidates(affectedClassesUnderTest, affectedTests, project, classDir, testClassDir);
+            } catch (IOException | DependencyResolutionRequiredException e) { e.printStackTrace(); }
+        } else {
+            flakyTestCandidates = affectedClassesUnderTest;
         }
         long startUpdate = System.currentTimeMillis();
         if (updateSelectChecksums) {
