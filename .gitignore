@@ -1,6 +1,8 @@
 target/
 **/.DS_Store
 **/.idea/
+*.iml
+**/*.iml
 **/*~
 .*.swp
 *.o
