@@ -85,17 +85,18 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
         }
         printResult(affectedTests, "AffectedTests");
 
-        Set<String> affectedClassesUnderTest = getDepClassesUnderTest(affectedTests);
-
-        // Find OD-flaky test candidates
+        Set<String> affectedClassesUnderTest = null;
         Set<String> flakyTestCandidates = null;
-        File zlcFIle = new File(StartsConstants.ZLC_FILE);
-        if (zlcFIle.exists()) {
+        File zlcFile = new File(StartsConstants.ZLC_FILE);
+        if (affectedTests.size()>0 && zlcFile.exists()) {
             try {
+                affectedClassesUnderTest = getDepClassesUnderTest(affectedTests);
                 flakyTestCandidates = computeFlakyTestCandidates(affectedClassesUnderTest, affectedTests, project, classDir, testClassDir);
             } catch (IOException | DependencyResolutionRequiredException e) { e.printStackTrace(); }
+        } else if (affectedTests.size()>0 && !zlcFile.exists()) {
+            flakyTestCandidates = affectedTests;
         } else {
-            flakyTestCandidates = affectedClassesUnderTest;
+            flakyTestCandidates = new HashSet<>();
         }
         long startUpdate = System.currentTimeMillis();
         if (updateSelectChecksums) {
