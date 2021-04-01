@@ -3,6 +3,7 @@ package edu.illinois.cs.dt.tools.detection;
 import com.google.common.collect.Lists;
 import com.opencsv.CSVReader;
 import com.reedoei.eunomia.collections.ListEx;
+import edu.illinois.cs.dt.tools.constants.Constants;
 import edu.illinois.cs.dt.tools.constants.StartsConstants;
 import edu.illinois.cs.dt.tools.detection.detectors.Detector;
 import edu.illinois.cs.dt.tools.detection.detectors.DetectorFactory;
@@ -11,6 +12,7 @@ import edu.illinois.cs.dt.tools.utility.ErrorLogger;
 import edu.illinois.cs.dt.tools.utility.GetMavenTestOrder;
 import edu.illinois.cs.dt.tools.utility.OperationTime;
 import edu.illinois.cs.dt.tools.utility.TestClassData;
+import edu.illinois.starts.helpers.Writer;
 import edu.illinois.cs.testrunner.configuration.Configuration;
 import edu.illinois.cs.testrunner.data.framework.TestFramework;
 import edu.illinois.cs.testrunner.coreplugin.TestPlugin;
@@ -25,9 +27,7 @@ import org.apache.maven.plugin.surefire.AbstractSurefireMojo;
 import org.apache.maven.plugin.surefire.SurefirePlugin;
 import org.apache.maven.project.MavenProject;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.RuntimeException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +36,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 
 public class DetectorPlugin extends TestPlugin {
     private final Path outputPath;
@@ -203,9 +204,14 @@ public class DetectorPlugin extends TestPlugin {
     }
 
     public void executeSelectedIdflakies(final ProjectWrapper project, Set<String> flakyTestCandidates) {
+        long start = System.currentTimeMillis();
         final ErrorLogger logger = new ErrorLogger(project);
         this.coordinates = logger.coordinates();
         logger.runAndLogError(() -> detectorExecuteWithSeltectedTests(logger, project, moduleRounds(coordinates), flakyTestCandidates));
+        long end = System.currentTimeMillis();
+        List<String> runinngTime = new ArrayList<>();
+        runinngTime.add(Writer.millsToSeconds(end - start)+Constants.SEC);
+        writeToFile(runinngTime, Constants.SELECTED_TIME);
     }
 
     private Void detectorExecuteWithSeltectedTests(final ErrorLogger logger, final ProjectWrapper project, final int rounds,
@@ -302,9 +308,14 @@ public class DetectorPlugin extends TestPlugin {
 
     @Override
     public void execute(final ProjectWrapper project) {
+        long start = System.currentTimeMillis();
         final ErrorLogger logger = new ErrorLogger(project);
         this.coordinates = logger.coordinates();
         logger.runAndLogError(() -> detectorExecute(logger, project, moduleRounds(coordinates)));
+        long end = System.currentTimeMillis();
+        List<String> runinngTime = new ArrayList<>();
+        runinngTime.add(Writer.millsToSeconds(end - start)+Constants.SEC);
+        writeToFile(runinngTime, Constants.ORIGINAL_TIME);
     }
 
     private Void detectorExecute(final ErrorLogger logger, final ProjectWrapper project, final int rounds) throws IOException, MojoExecutionException {
@@ -456,5 +467,19 @@ public class DetectorPlugin extends TestPlugin {
             }
         }
         return aliveRunners;
+    }
+
+    private static void writeToFile(Collection col, String filename) {
+        try (BufferedWriter writer = Writer.getWriter(filename)) {
+            if (col.isEmpty()) {
+                writer.write("");
+                return;
+            }
+            for (Object elem : col) {
+                writer.write(elem + System.lineSeparator());
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
     }
 }
