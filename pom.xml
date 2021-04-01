@@ -3,11 +3,18 @@
 
     <groupId>edu.illinois.cs</groupId>
     <artifactId>idflakies</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
-
+    <version>${this.version}</version>
+    <packaging>pom</packaging>
+    
     <name>iDFlakies</name>
     <description>A tool for detecting flaky tests</description>
     <url>https://github.com/idflakies/iDFlakies</url>
+    
+    <modules>
+      <module>idflakies-core</module>
+      <module>starts-core</module>
+      <module>idflakies-maven-plugin</module>
+    </modules>
 
     <developers>
         <developer>
@@ -53,27 +60,27 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.5</version>
             </plugin>
-        <plugin>
-                <groupId>edu.illinois.cs</groupId>
-                <artifactId>testrunner-maven-plugin</artifactId>
-                <version>1.2</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>edu.illinois.cs</groupId>
-                        <artifactId>idflakies</artifactId>
-                        <version>1.2.0-SNAPSHOT</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <className>edu.illinois.cs.dt.tools.detection.DetectorPlugin</className>
-                </configuration>
-            </plugin>
+<!--        <plugin>-->
+<!--                <groupId>edu.illinois.cs</groupId>-->
+<!--                <artifactId>testrunner-maven-plugin</artifactId>-->
+<!--                <version>1.3-SNAPSHOT</version>-->
+<!--                <dependencies>-->
+<!--                    <dependency>-->
+<!--                        <groupId>edu.illinois.cs</groupId>-->
+<!--                        <artifactId>idflakies</artifactId>-->
+<!--                        <version>1.2.0-SNAPSHOT</version>-->
+<!--                    </dependency>-->
+<!--                </dependencies>-->
+<!--                <configuration>-->
+<!--                    <className>edu.illinois.cs.dt.tools.detection.DetectorPlugin</className>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
-
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <this.version>1.2.0-SNAPSHOT</this.version>
     </properties>
 
     <dependencies>
@@ -82,7 +89,11 @@
             <artifactId>testrunner-core-plugin</artifactId>
             <version>1.2</version>
         </dependency>
-        
+        <dependency>
+            <groupId>edu.illinois.cs</groupId>
+            <artifactId>testrunner-running</artifactId>
+            <version>1.2</version>
+        </dependency>
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
@@ -123,7 +134,7 @@
         <dependency>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.20.1</version>
+          <version>2.22.0</version>
           <type>maven-plugin</type>
         </dependency>
         <dependency>
