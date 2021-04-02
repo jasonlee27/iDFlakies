@@ -77,6 +77,7 @@ public interface StartsConstants {
     String BLD_CLS_TXT_FILE = TGT_DIR_NAME + File.separator + "build_classpath.txt";
     String STARTS_DIR_NAME = ".starts";
     String ZLC_FILE = STARTS_DIRECTORY_PATH + "deps.zlc";
+    String AFFECTED_TEST = "affected-tests";
 
 
 }

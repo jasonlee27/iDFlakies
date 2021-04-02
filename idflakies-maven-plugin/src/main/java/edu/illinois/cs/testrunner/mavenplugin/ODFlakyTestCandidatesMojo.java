@@ -84,6 +84,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
             log(Level.INFO, NO_TESTS_ARE_SELECTED_TO_RUN);
         }
         printResult(affectedTests, "AffectedTests");
+        Writer.writeToFile(affectedTests, StartsConstants.AFFECTED_TEST, getArtifactsDir());
 
         Set<String> affectedClassesUnderTest = null;
         Set<String> flakyTestCandidates = null;
