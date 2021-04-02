@@ -10,6 +10,8 @@ public class DetectorPathManager extends PathManager {
     public static final Path FLAKY_LIST_PATH = Paths.get("flaky-lists.json");
     public static final Path ORIGINAL_ORDER = Paths.get("original-order");
     public static final Path SELECTED_ORDER = Paths.get("selected-order");
+    public static final Path ORIGINAL_TIME = Paths.get("original-order-runningtime");
+    public static final Path SELECTED_TIME = Paths.get("selected-order-runningtime");
     public static final Path ERROR = Paths.get("error");
     public static final Path ORIGINAL_RESULTS_LOG = Paths.get("original-results-ids");
     public static final Path MVN_TEST_LOG = Paths.get("mvn-test.log");
@@ -45,6 +47,14 @@ public class DetectorPathManager extends PathManager {
 
     public static Path selectedOrderPath() {
         return path(SELECTED_ORDER);
+    }
+
+    public static Path originalTimePath() {
+        return path(ORIGINAL_TIME);
+    }
+
+    public static Path selectedTimePath() {
+        return path(SELECTED_TIME);
     }
 
     public static Path errorPath() {

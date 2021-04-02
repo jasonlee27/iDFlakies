@@ -210,8 +210,8 @@ public class DetectorPlugin extends TestPlugin {
         logger.runAndLogError(() -> detectorExecuteWithSeltectedTests(logger, project, moduleRounds(coordinates), flakyTestCandidates));
         long end = System.currentTimeMillis();
         List<String> runinngTime = new ArrayList<>();
-        runinngTime.add(Writer.millsToSeconds(end - start)+Constants.SEC);
-        writeToFile(runinngTime, Constants.SELECTED_TIME);
+        runinngTime.add(Writer.millsToSeconds(end - start));
+        writeToFile(runinngTime, DetectorPathManager.selectedTimePath());
     }
 
     private Void detectorExecuteWithSeltectedTests(final ErrorLogger logger, final ProjectWrapper project, final int rounds,
@@ -314,8 +314,8 @@ public class DetectorPlugin extends TestPlugin {
         logger.runAndLogError(() -> detectorExecute(logger, project, moduleRounds(coordinates)));
         long end = System.currentTimeMillis();
         List<String> runinngTime = new ArrayList<>();
-        runinngTime.add(Writer.millsToSeconds(end - start)+Constants.SEC);
-        writeToFile(runinngTime, Constants.ORIGINAL_TIME);
+        runinngTime.add(Writer.millsToSeconds(end - start));
+        writeToFile(runinngTime, DetectorPathManager.originalTimePath());
     }
 
     private Void detectorExecute(final ErrorLogger logger, final ProjectWrapper project, final int rounds) throws IOException, MojoExecutionException {
@@ -469,8 +469,8 @@ public class DetectorPlugin extends TestPlugin {
         return aliveRunners;
     }
 
-    private static void writeToFile(Collection col, String filename) {
-        try (BufferedWriter writer = Writer.getWriter(filename)) {
+    private static void writeToFile(Collection col, Path filename) {
+        try (BufferedWriter writer = Writer.getWriter(filename.toString())) {
             if (col.isEmpty()) {
                 writer.write("");
                 return;
