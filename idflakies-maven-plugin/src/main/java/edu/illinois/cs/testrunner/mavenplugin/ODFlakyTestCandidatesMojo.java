@@ -20,6 +20,8 @@ import org.apache.maven.surefire.booter.Classpath;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -36,6 +38,9 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
      */
     @Parameter(property = "updateSelectChecksums", defaultValue = TRUE)
     private boolean updateSelectChecksums;
+
+    @Parameter(property = "runIdflakies", defaultValue = TRUE)
+    private boolean runIdflakies;
 
     @Parameter(defaultValue = "")
     private String propertiesPath;
@@ -66,7 +71,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
             TestPluginUtil.setConfigs(this.propertiesPath);
             TestPluginUtil.project = new MavenProjectWrapper(project, new IdflakiesLog());
             DetectorPlugin detector = new DetectorPlugin();
-            detector.executeSelectedIdflakies(TestPluginUtil.project, flakyTestCandidates);
+            detector.executeSelectedIdflakies(TestPluginUtil.project, flakyTestCandidates, runIdflakies);
         } catch (IOException ioe) { ioe.printStackTrace(); }
     }
 
@@ -83,29 +88,40 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
             log(Level.INFO, STARS_RUN_STARS);
             log(Level.INFO, NO_TESTS_ARE_SELECTED_TO_RUN);
         }
-        printResult(affectedTests, "AffectedTests");
-        Writer.writeToFile(affectedTests, StartsConstants.AFFECTED_TEST, getArtifactsDir());
+        // printResult(affectedTests, "AffectedTests");
 
-        Set<String> affectedClassesUnderTest = null;
-        Set<String> flakyTestCandidates = null;
-        File zlcFile = new File(StartsConstants.ZLC_FILE);
-        if (affectedTests.size()>0 && zlcFile.exists()) {
-            try {
-                affectedClassesUnderTest = getDepClassesUnderTest(affectedTests);
-                flakyTestCandidates = computeFlakyTestCandidates(affectedClassesUnderTest, affectedTests, project, classDir, testClassDir);
-            } catch (IOException | DependencyResolutionRequiredException e) { e.printStackTrace(); }
-        } else if (affectedTests.size()>0 && !zlcFile.exists()) {
-            flakyTestCandidates = affectedTests;
-        } else {
-            flakyTestCandidates = new HashSet<>();
-        }
+        // Update deps.zlc
         long startUpdate = System.currentTimeMillis();
         if (updateSelectChecksums) {
             updateForNextRun(nonAffectedTests);
         }
         long endUpdate = System.currentTimeMillis();
         log(Level.FINE, PROFILE_STARTS_MOJO_UPDATE_TIME + Writer.millsToSeconds(endUpdate - startUpdate));
-        printResult(flakyTestCandidates, "FlakyTestCandidates");
+
+        // Find flaky test candidates
+        Set<String> affectedClassesUnderTest = null;
+        Set<String> flakyTestCandidates = new HashSet<>();
+        File zlcFile = new File(getArtifactsDir()+File.separator+StartsConstants.ZLC_FILE);
+        if (affectedTests.size()>0 && zlcFile.exists()) {
+            try {
+                affectedClassesUnderTest = getDepClassesUnderTest(affectedTests);
+                flakyTestCandidates = computeFlakyTestCandidates(affectedClassesUnderTest, affectedTests, project, classDir, testClassDir);
+            } catch (IOException | DependencyResolutionRequiredException e) {
+                e.printStackTrace();
+            }
+        }
+        // printResult(flakyTestCandidates, "FlakyTestCandidates");
+        Writer.writeToFile(allTests, StartsConstants.ALL_TEST, getArtifactsDir());
+        Writer.writeToFile(affectedTests, StartsConstants.AFFECTED_TEST, getArtifactsDir());
+        Writer.writeToFile(flakyTestCandidates, StartsConstants.FLAKY_TEST, getArtifactsDir());
+
+        Set<String> selectResult = new HashSet<>();
+        selectResult.add("#AllTests: "+allTests.size());
+        selectResult.add("#AffectedTests: "+affectedTests.size());
+        selectResult.add("#CandidateTests: "+flakyTestCandidates.size());
+        selectResult.add("********************");
+        printResult(selectResult, "#Selection Results");
+
         return flakyTestCandidates;
     }
 

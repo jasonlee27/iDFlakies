@@ -3,7 +3,6 @@ package edu.illinois.cs.dt.tools.detection;
 import com.google.common.collect.Lists;
 import com.opencsv.CSVReader;
 import com.reedoei.eunomia.collections.ListEx;
-import edu.illinois.cs.dt.tools.constants.Constants;
 import edu.illinois.cs.dt.tools.constants.StartsConstants;
 import edu.illinois.cs.dt.tools.detection.detectors.Detector;
 import edu.illinois.cs.dt.tools.detection.detectors.DetectorFactory;
@@ -12,23 +11,22 @@ import edu.illinois.cs.dt.tools.utility.ErrorLogger;
 import edu.illinois.cs.dt.tools.utility.GetMavenTestOrder;
 import edu.illinois.cs.dt.tools.utility.OperationTime;
 import edu.illinois.cs.dt.tools.utility.TestClassData;
-import edu.illinois.starts.helpers.Writer;
 import edu.illinois.cs.testrunner.configuration.Configuration;
-import edu.illinois.cs.testrunner.data.framework.TestFramework;
 import edu.illinois.cs.testrunner.coreplugin.TestPlugin;
 import edu.illinois.cs.testrunner.coreplugin.TestPluginUtil;
+import edu.illinois.cs.testrunner.data.framework.TestFramework;
 import edu.illinois.cs.testrunner.runner.Runner;
 import edu.illinois.cs.testrunner.runner.RunnerFactory;
 import edu.illinois.cs.testrunner.testobjects.TestLocator;
 import edu.illinois.cs.testrunner.util.ProjectWrapper;
-import scala.collection.JavaConverters;
+import edu.illinois.starts.helpers.Writer;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.surefire.AbstractSurefireMojo;
-import org.apache.maven.plugin.surefire.SurefirePlugin;
-import org.apache.maven.project.MavenProject;
+import scala.collection.JavaConverters;
 
-import java.io.*;
-import java.lang.RuntimeException;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +34,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 
 public class DetectorPlugin extends TestPlugin {
     private final Path outputPath;
@@ -203,11 +200,11 @@ public class DetectorPlugin extends TestPlugin {
         return rounds;
     }
 
-    public void executeSelectedIdflakies(final ProjectWrapper project, Set<String> flakyTestCandidates) {
+    public void executeSelectedIdflakies(final ProjectWrapper project, Set<String> flakyTestCandidates, boolean runIdflakies) {
         long start = System.currentTimeMillis();
         final ErrorLogger logger = new ErrorLogger(project);
         this.coordinates = logger.coordinates();
-        logger.runAndLogError(() -> detectorExecuteWithSeltectedTests(logger, project, moduleRounds(coordinates), flakyTestCandidates));
+        logger.runAndLogError(() -> detectorExecuteWithSeltectedTests(logger, project, moduleRounds(coordinates), flakyTestCandidates, runIdflakies));
         long end = System.currentTimeMillis();
         List<String> runinngTime = new ArrayList<>();
         runinngTime.add(Writer.millsToSeconds(end - start));
@@ -215,7 +212,7 @@ public class DetectorPlugin extends TestPlugin {
     }
 
     private Void detectorExecuteWithSeltectedTests(final ErrorLogger logger, final ProjectWrapper project, final int rounds,
-                                                   Set<String> flakyTestCandidates) throws IOException, MojoExecutionException {
+                                                   Set<String> flakyTestCandidates, boolean runIdflakies) throws IOException, MojoExecutionException {
         Files.deleteIfExists(DetectorPathManager.errorPath());
         Files.createDirectories(DetectorPathManager.cachePath());
         Files.createDirectories(DetectorPathManager.detectionResults());
@@ -281,18 +278,19 @@ public class DetectorPlugin extends TestPlugin {
         Files.write(DetectorPathManager.originalOrderPath(), String.join(System.lineSeparator(), allTests).getBytes());
         Files.write(DetectorPathManager.selectedOrderPath(), String.join(System.lineSeparator(), tests).getBytes());
 
-        if (!tests.isEmpty()) {
+        if (runIdflakies) {
+            if (!tests.isEmpty()) {
 //            Files.createDirectories(outputPath);
 //            Files.write(DetectorPathManager.originalOrderPath(), String.join(System.lineSeparator(), allTests).getBytes());
-            final Detector detector = DetectorFactory.makeDetector(this.runner, tests, rounds);
-            TestPluginUtil.project.info("Created dependent test detector (" + detector.getClass() + ").");
-            detector.writeTo(outputPath);
-        } else {
-            String errorMsg = "Module has no tests, not running detector.";
-            TestPluginUtil.project.info(errorMsg);
-            logger.writeError(errorMsg);
+                final Detector detector = DetectorFactory.makeDetector(this.runner, tests, rounds);
+                TestPluginUtil.project.info("Created dependent test detector (" + detector.getClass() + ").");
+                detector.writeTo(outputPath);
+            } else {
+                String errorMsg = "Module has no tests, not running detector.";
+                TestPluginUtil.project.info(errorMsg);
+                logger.writeError(errorMsg);
+            }
         }
-
         return null;
     }
 
