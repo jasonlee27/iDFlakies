@@ -123,6 +123,21 @@
           <artifactId>starts-core</artifactId>
           <version>1.4-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.ibm.wala</groupId>
+            <artifactId>com.ibm.wala.core</artifactId>
+            <version>1.5.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.wala</groupId>
+            <artifactId>com.ibm.wala.util</artifactId>
+            <version>1.5.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.wala</groupId>
+            <artifactId>com.ibm.wala.cast.java</artifactId>
+            <version>1.5.6</version>
+        </dependency>
     </dependencies>
 
     <profiles>
