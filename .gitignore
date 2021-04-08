@@ -1,4 +1,5 @@
 target/
+idflakies-core/src/main/*.iml
 **/.DS_Store
 **/.idea/
 *.iml
