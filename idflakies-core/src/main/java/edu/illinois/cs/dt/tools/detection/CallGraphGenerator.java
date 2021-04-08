@@ -76,13 +76,17 @@ public class CallGraphGenerator {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public static CallGraph getCallGraph(String classpath)
+    public static CallGraph getCallGraph(String targetClassPath, List<String> classPaths)
             throws IOException, ClassHierarchyException, CallGraphBuilderCancelException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         File exclusionFile = new File(Objects.requireNonNull(classLoader.getResource("Java60RegressionExclusions.txt")).getFile());
-        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classpath, exclusionFile);
-        AnalysisScope mainScope = AnalysisScopeReader.makeJavaBinaryAnalysisScope("/Users/jaeseonglee/projects/incremental_iDFlakies/_downloads/wikidata_wikidata-toolkit_539f522/wdtk-util/target/classes/org/wikidata/wdtk/util/DirectoryManagerFactory.class", exclusionFile);
-        scope.addToScope(mainScope);
+
+        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(targetClassPath, exclusionFile);
+        for(String classPath: classPaths) {
+            AnalysisScope mainScope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classPath, exclusionFile);
+            scope.addToScope(mainScope);
+        }
+
         // ClassHierarchy cha = ClassHierarchyFactory.makeWithRoot(scope);
         ClassHierarchy cha = ClassHierarchyFactory.make(scope);
 
@@ -108,35 +112,35 @@ public class CallGraphGenerator {
         return reachable.contains(dst);
     }
 
-//    public Map<IClass, Set<IMethod>> getMethodNamesInJar(String JarFilePath) {
-//        Map<IClass, Set<IMethod>> result = new HashMap<>();
-//        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-//        File exclusionFile = new File(Objects.requireNonNull(classLoader.getResource("Java60RegressionExclusions.txt")).getFile());
-//        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(JarFilePath, exclusionFile);
-//        IClassHierarchy cha = ClassHierarchy.make(scope);
-//        for (IClass c : cha) {
-//            Set<IMethod> mthds = new HashSet<>();
-//            for (IMethod m : c.getAllMethods()) { mthdNames.add(m); }
-//            result.putIfAbsent(c, mthds);
-//        }
-//        return result;
-//    }
-//
-//    public Set<IMethod> getMethodsInClass(String className) {
-//        Set<IMethod> result = new HashSet<>();
-//        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-//        File exclusionFile = new File(Objects.requireNonNull(classLoader.getResource("Java60RegressionExclusions.txt")).getFile());
-//        System.out.println(exclusionFile.getAbsolutePath());
-//        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(className, exclusionFile);
-//        IClassHierarchy cha = ClassHierarchy.make(scope);
-//        for (IClass c : cha) {
-//            for (IMethod m : c.getAllMethods()) { result.add(m); }
-//        }
-//        return result;
-//    }
+    public Map<IClass, Set<IMethod>> getMethodNamesInJar(String JarFilePath) {
+        Map<IClass, Set<IMethod>> result = new HashMap<>();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        File exclusionFile = new File(Objects.requireNonNull(classLoader.getResource("Java60RegressionExclusions.txt")).getFile());
+        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(JarFilePath, exclusionFile);
+        IClassHierarchy cha = ClassHierarchy.make(scope);
+        for (IClass c : cha) {
+            Set<IMethod> mthds = new HashSet<>();
+            for (IMethod m : c.getAllMethods()) { mthdNames.add(m); }
+            result.putIfAbsent(c, mthds);
+        }
+        return result;
+    }
 
-    public static void printTransitiveClosure(final String classpath) throws IOException, ClassHierarchyException, CallGraphBuilderCancelException {
-        CallGraph cg = getCallGraph(classpath);
+    public Set<IMethod> getMethodsInClass(String className) {
+        Set<IMethod> result = new HashSet<>();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        File exclusionFile = new File(Objects.requireNonNull(classLoader.getResource("Java60RegressionExclusions.txt")).getFile());
+        System.out.println(exclusionFile.getAbsolutePath());
+        AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(className, exclusionFile);
+        IClassHierarchy cha = ClassHierarchy.make(scope);
+        for (IClass c : cha) {
+            for (IMethod m : c.getAllMethods()) { result.add(m); }
+        }
+        return result;
+    }
+
+    public static void printTransitiveClosure(String targetClassPath, List<String> classPaths) throws IOException, ClassHierarchyException, CallGraphBuilderCancelException {
+        CallGraph cg = getCallGraph(targetClassPath, classPaths);
         Map<CGNode, OrdinalSet<CGNode>> transitiveClosure = getCallGraphTransitiveClosure(cg);
         for (Map.Entry<CGNode, OrdinalSet<CGNode>> entry : transitiveClosure.entrySet()) {
             CGNode keyMethod = entry.getKey();
@@ -152,11 +156,10 @@ public class CallGraphGenerator {
     }
 
     public static void main(String[] args) throws IOException, ClassHierarchyException, CallGraphBuilderCancelException {
-        String classpath = args[0];
-        System.out.println("~~~~~~~~~");
-        System.out.println(classpath);
-        System.out.println("~~~~~~~~~");
-        printTransitiveClosure(classpath);
+        String targetClassPath = "/Users/jaeseonglee/projects/incremental_iDFlakies/_downloads/wikidata_wikidata-toolkit_539f522/wdtk-util/target/test-classes/org/wikidata/wdtk/util/DirectoryManagerFactoryTest.class";
+        List<String> classPaths = new ArrayList<>();
+        classPaths.add("/Users/jaeseonglee/projects/incremental_iDFlakies/_downloads/wikidata_wikidata-toolkit_539f522/wdtk-util/target/classes/org/wikidata/wdtk/util/DirectoryManagerFactory.class");
+        printTransitiveClosure(targetClassPath, classPaths);
     }
 
 }
