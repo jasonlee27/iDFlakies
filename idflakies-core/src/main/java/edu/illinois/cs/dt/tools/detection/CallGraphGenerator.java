@@ -156,6 +156,10 @@ public class CallGraphGenerator {
     }
 
     public static void main(String[] args) throws IOException, ClassHierarchyException, CallGraphBuilderCancelException {
+
+        /*
+        cmd = java -classpath {IDFLAKIES_DIR}/idflakies-core/target/idflakies-core-1.2.0-SNAPSHOT-jar-with-dependencies.jar edu.illinois.cs.dt.tools.detection.CallGraphGenerator
+         */
         String targetClassPath = "/Users/jaeseonglee/projects/incremental_iDFlakies/_downloads/wikidata_wikidata-toolkit_539f522/wdtk-util/target/test-classes/org/wikidata/wdtk/util/DirectoryManagerFactoryTest.class";
         List<String> classPaths = new ArrayList<>();
         classPaths.add("/Users/jaeseonglee/projects/incremental_iDFlakies/_downloads/wikidata_wikidata-toolkit_539f522/wdtk-util/target/classes/org/wikidata/wdtk/util/DirectoryManagerFactory.class");
