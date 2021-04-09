@@ -1,27 +1,21 @@
 package edu.illinois.cs.testrunner.mavenplugin;
 
+import edu.illinois.cs.dt.tools.constants.StartsConstants;
+import edu.illinois.cs.dt.tools.detection.DetectorPlugin;
+import edu.illinois.cs.dt.tools.detection.ODFlakyTestFinder;
+import edu.illinois.cs.testrunner.coreplugin.TestPluginUtil;
 import edu.illinois.starts.helpers.Cache;
 import edu.illinois.starts.helpers.Loadables;
 import edu.illinois.starts.helpers.Writer;
 import edu.illinois.starts.util.Pair;
-import edu.illinois.cs.dt.tools.detection.ODFlakyTestFinder;
-import edu.illinois.cs.dt.tools.constants.StartsConstants;
-import edu.illinois.cs.dt.tools.detection.DetectorPlugin;
-import edu.illinois.cs.testrunner.coreplugin.TestPluginUtil;
-import edu.illinois.cs.testrunner.util.ProjectWrapper;
-
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.*;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.surefire.booter.Classpath;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -130,7 +124,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
             throws IOException, DependencyResolutionRequiredException {
         long startFlaky = System.currentTimeMillis();
         List<String> classesWithStaticFields = ODFlakyTestFinder.staticFieldsFinder(affectedClassesUnderTest, project);
-        List<String> odFlakyTestCandid = ODFlakyTestFinder.getFlakyTestCandidatesFromSelectedTests(new ArrayList<>(affectedTests), classesWithStaticFields, project, classDir, testClassDir);
+        List<String> odFlakyTestCandid = ODFlakyTestFinder.getFlakyTestCandidatesFromSelectedTests(classesWithStaticFields, project, classDir, testClassDir);
         long endFlaky = System.currentTimeMillis();
         log(Level.FINE, PROFILE_STARTS_MOJO_FLAKY_TEST_TIME + Writer.millsToSeconds(endFlaky - startFlaky));
         return new HashSet<>(odFlakyTestCandid);

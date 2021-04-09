@@ -14,6 +14,7 @@ public class StaticFieldVisitor extends ClassVisitor {
     public StaticFieldVisitor(StaticFieldsCountManager manager) {
         super(Opcodes.ASM5);
         this.manager = manager;
+        this.staticFieldCount = 0;
     }
 
     @Override
@@ -42,6 +43,7 @@ public class StaticFieldVisitor extends ClassVisitor {
         // Just report back.
         this.manager.addCount(this.className, this.superClassName, this.staticFieldCount);
 //        System.out.println(this.manager.nameToDeclaredCount.toString());
+        this.staticFieldCount = 0;
         super.visitEnd();
     }
 }

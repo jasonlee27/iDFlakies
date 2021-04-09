@@ -123,10 +123,14 @@ public class ODFlakyTestFinder {
             String[] clsSplit = cls.split(StartsConstants.EXCLAMATION);
             if (clsSplit[0].endsWith(StartsConstants.JAR_EXTENSION)) {
                 Map<String, Integer> resMapFromJar = findStaticFieldFromJars(clsSplit[0], clsSplit[1]);
-                result.addAll(new ArrayList<>(resMapFromJar.keySet()));
+                for (Map.Entry<String, Integer> entry: resMapFromJar.entrySet()) {
+                    if (entry.getValue()>0) { result.add(entry.getKey()); }
+                }
             } else {
                 Map<String, Integer> resMapFromClass = findStaticFieldFromClass(cls);
-                result.addAll(new ArrayList<>(resMapFromClass.keySet()));
+                for (Map.Entry<String, Integer> entry: resMapFromClass.entrySet()) {
+                    if (entry.getValue()>0) { result.add(entry.getKey()); }
+                }
             }
         }
         return result;
@@ -181,8 +185,8 @@ public class ODFlakyTestFinder {
         return result;
     }
 
-    public static List<String> getFlakyTestCandidatesFromSelectedTests(List<String> selectedTests, List<String> classesWithStaticFields,
-                                                                       MavenProject project, File classDir, File testClassDir) throws FileNotFoundException {
+    public static List<String> getFlakyTestCandidatesFromSelectedTests(List<String> classesWithStaticFields, MavenProject project,
+                                                                       File classDir, File testClassDir) throws FileNotFoundException {
         Map<String, String[]> depTestMap = getDepTests(project, classDir, testClassDir);
         // List<String> classesUnderTests = getClassesUnderTestThatAffectsSelectedTests(selectedTests, depTestMap);
         // List<String> clsWithSfFromSelectedTests = findClassWithStaticFieldsFromClassUnderTests(classesUnderTests, classesWithStaticFields);
