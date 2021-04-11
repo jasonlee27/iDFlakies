@@ -43,7 +43,7 @@ public class StaticFieldVisitor extends ClassVisitor {
         // Just report back.
         this.manager.addCount(this.className, this.superClassName, this.staticFieldCount);
 //        System.out.println(this.manager.nameToDeclaredCount.toString());
-        this.staticFieldCount = 0;
+//        this.staticFieldCount = 0;
         super.visitEnd();
     }
 }

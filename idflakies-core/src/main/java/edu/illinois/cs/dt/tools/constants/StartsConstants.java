@@ -80,6 +80,7 @@ public interface StartsConstants {
     String AFFECTED_TEST = "affected-tests";
     String FLAKY_TEST = "flaky-test-candidates";
     String ALL_TEST = "all-tests";
+    String CLASSES_WITH_STATICFIELDS = "affected-classes-with-static-fields";
 
 
 }

@@ -48,10 +48,9 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
 //        logger = Logger.getGlobal();
         long start = System.currentTimeMillis();
         MavenProject project = getProject();
-        File classDir = getClassesDirectory();
-        File testClassDir = getTestClassesDirectory();
-
-        Set<String> flakyTestCandidates = computeAffectedTests(project, classDir, testClassDir);
+//        File classDir = getClassesDirectory();
+//        File testClassDir = getTestClassesDirectory();
+        Set<String> flakyTestCandidates = computeAffectedTests(project);
 
         runDetectorMethod(project, flakyTestCandidates);
 
@@ -69,7 +68,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
         } catch (IOException ioe) { ioe.printStackTrace(); }
     }
 
-    private Set<String> computeAffectedTests(MavenProject project, File classDir, File testClassDir) throws MojoExecutionException {
+    private Set<String> computeAffectedTests(MavenProject project) throws MojoExecutionException {
         setIncludesExcludes();
         Set<String> allTests = new HashSet<>(getTestClasses(CHECK_IF_ALL_AFFECTED));
         Set<String> affectedTests = new HashSet<>(allTests);
@@ -99,7 +98,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
         if (affectedTests.size()>0 && zlcFile.exists()) {
             try {
                 affectedClassesUnderTest = getDepClassesUnderTest(affectedTests);
-                flakyTestCandidates = computeFlakyTestCandidates(affectedClassesUnderTest, affectedTests, project, classDir, testClassDir);
+                flakyTestCandidates = computeFlakyTestCandidates(affectedClassesUnderTest, project);
             } catch (IOException | DependencyResolutionRequiredException e) {
                 e.printStackTrace();
             }
@@ -119,19 +118,22 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
         return flakyTestCandidates;
     }
 
-    private Set<String> computeFlakyTestCandidates(Set<String> affectedClassesUnderTest, Set<String> affectedTests,
-                                                   MavenProject project, File classDir, File testClassDir)
-            throws IOException, DependencyResolutionRequiredException {
+    private Set<String> computeFlakyTestCandidates(Set<String> affectedClassesUnderTest, MavenProject project)
+            throws IOException, DependencyResolutionRequiredException, MojoExecutionException {
         long startFlaky = System.currentTimeMillis();
         List<String> classesWithStaticFields = ODFlakyTestFinder.staticFieldsFinder(affectedClassesUnderTest, project);
-        List<String> odFlakyTestCandid = ODFlakyTestFinder.getFlakyTestCandidatesFromSelectedTests(classesWithStaticFields, project, classDir, testClassDir);
+        List<String> odFlakyTestCandid = ODFlakyTestFinder.getFlakyTestCandidatesFromSelectedTests(classesWithStaticFields, project);
         long endFlaky = System.currentTimeMillis();
+        Writer.writeToFile(classesWithStaticFields, StartsConstants.CLASSES_WITH_STATICFIELDS, getArtifactsDir());
         log(Level.FINE, PROFILE_STARTS_MOJO_FLAKY_TEST_TIME + Writer.millsToSeconds(endFlaky - startFlaky));
         return new HashSet<>(odFlakyTestCandid);
     }
 
-    private Map<String, Set<String>> getDepMap(String sfPathString, Classpath sfClassPath, List<String> classesToAnalyze,
-                                               boolean computeUnreached) {
+    private Map<String, Set<String>> getDepMap(List<String> classesToAnalyze) throws MojoExecutionException {
+        Classpath sfClassPath = getSureFireClassPath();
+        String sfPathString = Writer.pathToString(sfClassPath.getClassPath());
+        boolean computeUnreached = true;
+
         String m2Repo = getLocalRepository().getBasedir();
         File jdepsCache = new File(graphCache);
         // Create the Loadables object early so we can use its helpers
@@ -154,10 +156,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
     }
 
     private Set<String> getDepClassesUnderTest(Set<String> selectedTests) throws MojoExecutionException {
-        Classpath sfClassPath = getSureFireClassPath();
-        String sfPathString = Writer.pathToString(sfClassPath.getClassPath());
-        boolean computeUnreached = true;
-        Map<String, Set<String>> transistiveMap = getDepMap(sfPathString, sfClassPath, new ArrayList<>(selectedTests), computeUnreached);
+        Map<String, Set<String>> transistiveMap = getDepMap(new ArrayList<>(selectedTests));
         Set<String> result = new HashSet<>();
         for (String cls: selectedTests) {
             result.addAll(transistiveMap.get(cls));

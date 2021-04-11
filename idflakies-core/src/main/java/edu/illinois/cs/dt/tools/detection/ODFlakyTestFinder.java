@@ -78,8 +78,8 @@ public class ODFlakyTestFinder {
         return classes;
     }
 
-    public static Set<String> readProjPaths(MavenProject project) {
-        List<File> clsFileList = FileUtil.findFileRec(project.getBasedir(), StartsConstants.CLASS_EXTENSION);
+    public static Set<String> readProjPaths() {
+        List<File> clsFileList = FileUtil.findFileRec(new File(System.getProperty("user.dir")), StartsConstants.CLASS_EXTENSION);
         Set<String> clsPaths = new HashSet<>();
         for (File clsFile: clsFileList) {
             clsPaths.add(clsFile.getAbsolutePath());
@@ -93,7 +93,7 @@ public class ODFlakyTestFinder {
     public static Set<String> findAffectedClassPaths(Set<String> affectedClassesUnderTest, MavenProject project)
             throws IOException, DependencyResolutionRequiredException {
         Set<String> jarClassPaths = readJarPaths(project);
-        Set<String> projClassPaths = readProjPaths(project);
+        Set<String> projClassPaths = readProjPaths();
         Set<String> result = new HashSet<>();
         boolean foundInJar = false;
         for (String clsPath: affectedClassesUnderTest) {
@@ -136,7 +136,7 @@ public class ODFlakyTestFinder {
         return result;
     }
 
-    public static Map<String, String[]> getDepTests(MavenProject project, File classDir, File testClassDir) throws FileNotFoundException {
+    public static Map<String, String[]> getDepTests(MavenProject project) throws FileNotFoundException {
         List<File> depFiles = FileUtil.findFileRec(project.getBasedir(), StartsConstants.STARTS_DIR_NAME+File.separator+StartsConstants.ZLC_FILE);
         Map<String, String[]> result = new HashMap<>();
         for (File df: depFiles) {
@@ -148,11 +148,8 @@ public class ODFlakyTestFinder {
                 if(splitLine[0].startsWith(StartsConstants.DEPSZLC_JAR_FILE_PREFIX)){
                     String[] newSplitLine = splitLine[0].split(StartsConstants.JAR_EXTENSION+StartsConstants.EXCLAMATION);
                     clsUnderTest = newSplitLine[newSplitLine.length-1].substring(1);
-                } else if(splitLine[0].startsWith(StartsConstants.DEPSZLC_CLS_FILE_PREFIX+classDir.toString())){
-                    String[] newSplitLine = splitLine[0].split(StartsConstants.DEPSZLC_CLS_FILE_PREFIX+classDir.toString());
-                    clsUnderTest = newSplitLine[newSplitLine.length-1].substring(1);
                 } else {
-                    String[] newSplitLine = splitLine[0].split(StartsConstants.DEPSZLC_CLS_FILE_PREFIX+testClassDir.toString());
+                    String[] newSplitLine = splitLine[0].split(StartsConstants.DEPSZLC_CLS_FILE_PREFIX+System.getProperty("user.dir"));
                     clsUnderTest = newSplitLine[newSplitLine.length-1].substring(1);
                 }
                 result.putIfAbsent(clsUnderTest, depTests);
@@ -185,9 +182,8 @@ public class ODFlakyTestFinder {
         return result;
     }
 
-    public static List<String> getFlakyTestCandidatesFromSelectedTests(List<String> classesWithStaticFields, MavenProject project,
-                                                                       File classDir, File testClassDir) throws FileNotFoundException {
-        Map<String, String[]> depTestMap = getDepTests(project, classDir, testClassDir);
+    public static List<String> getFlakyTestCandidatesFromSelectedTests(List<String> classesWithStaticFields, MavenProject project) throws FileNotFoundException {
+        Map<String, String[]> depTestMap = getDepTests(project);
         // List<String> classesUnderTests = getClassesUnderTestThatAffectsSelectedTests(selectedTests, depTestMap);
         // List<String> clsWithSfFromSelectedTests = findClassWithStaticFieldsFromClassUnderTests(classesUnderTests, classesWithStaticFields);
         Set<String> result = new HashSet<>();
@@ -196,15 +192,15 @@ public class ODFlakyTestFinder {
             String key;
             if (clsSplit.length==2){ // class in jar
                 key = clsSplit[clsSplit.length-1]+StartsConstants.CLASS_EXTENSION;
-            } else if (cls.startsWith(classDir.toString())) { // class in project code
-                clsSplit = cls.split(classDir.toString()+StartsConstants.BACKSLASH);
-                key = clsSplit[clsSplit.length-1]+StartsConstants.CLASS_EXTENSION;
-            } else { // class in project test code
-                clsSplit = cls.split(testClassDir.toString()+StartsConstants.BACKSLASH);
-                key = clsSplit[clsSplit.length-1]+StartsConstants.CLASS_EXTENSION;
+            } else { // class in project code
+                key = cls+StartsConstants.CLASS_EXTENSION;
             }
-            String[] depTests = depTestMap.get(key);
-            if (depTests!=null) { Collections.addAll(result, depTestMap.get(key)); }
+            for (String depTestKey: depTestMap.keySet()) {
+                if (depTestKey.endsWith(key)) {
+                    String[] depTests = depTestMap.get(depTestKey);
+                    if (depTests!=null) { Collections.addAll(result, depTests); }
+                }
+            }
         }
         return new ArrayList<>(result);
     }
