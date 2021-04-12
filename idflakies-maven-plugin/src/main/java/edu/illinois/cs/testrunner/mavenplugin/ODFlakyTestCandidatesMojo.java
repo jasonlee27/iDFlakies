@@ -72,7 +72,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
         setIncludesExcludes();
         Set<String> allTests = new HashSet<>(getTestClasses(CHECK_IF_ALL_AFFECTED));
         Set<String> affectedTests = new HashSet<>(allTests);
-        Pair<Set<String>, Set<String>> data = computeChangeData(false);
+        Pair<Set<String>, Set<String>> data = computeChangeData(true);
         Set<String> nonAffectedTests = data == null ? new HashSet<String>() : data.getKey();
         // Set<String> changed = data == null ? new HashSet<String>() : data.getValue();
 
@@ -158,9 +158,7 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
     private Set<String> getDepClassesUnderTest(Set<String> selectedTests) throws MojoExecutionException {
         Map<String, Set<String>> transistiveMap = getDepMap(new ArrayList<>(selectedTests));
         Set<String> result = new HashSet<>();
-        for (String cls: selectedTests) {
-            result.addAll(transistiveMap.get(cls));
-        }
+        for (String cls: selectedTests) { result.addAll(transistiveMap.get(cls)); }
         return result;
     }
 
