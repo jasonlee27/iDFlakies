@@ -4,24 +4,9 @@
 
 package edu.illinois.cs.testrunner.mavenplugin;
 
-import java.io.File;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-
 import edu.illinois.cs.dt.tools.constants.StartsConstants;
 import edu.illinois.starts.enums.DependencyFormat;
-import edu.illinois.starts.helpers.Cache;
-import edu.illinois.starts.helpers.Loadables;
-import edu.illinois.starts.helpers.PomUtil;
-import edu.illinois.starts.helpers.RTSUtil;
-import edu.illinois.starts.helpers.Writer;
+import edu.illinois.starts.helpers.*;
 import edu.illinois.starts.util.Logger;
 import edu.illinois.yasgl.DirectedGraph;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -35,6 +20,13 @@ import org.apache.maven.surefire.booter.Classpath;
 import org.apache.maven.surefire.booter.SurefireExecutionException;
 import org.apache.maven.surefire.testset.TestListResolver;
 import org.apache.maven.surefire.util.DefaultScanResult;
+
+import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Base MOJO for the JDeps-Based STARTS.
@@ -50,7 +42,7 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
     /**
      * Set this to "false" to not add jdeps edges from 3rd party-libraries.
      */
-    @Parameter(property = "useThirdParty", defaultValue = FALSE)
+    @Parameter(property = "useThirdParty", defaultValue = TRUE)
     protected boolean useThirdParty;
 
     /**
