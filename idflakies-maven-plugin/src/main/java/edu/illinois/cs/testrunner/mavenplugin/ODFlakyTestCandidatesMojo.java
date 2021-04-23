@@ -74,6 +74,9 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
             selectResult.add("#CandidateTests: "+flakyTestCandidates.size());
             selectResult.add("********************");
             printResult(selectResult, "#Selection Results");
+            Writer.writeToFile(flakyTestCandidates, StartsConstants.ALL_TEST, getArtifactsDir());
+            Writer.writeToFile(flakyTestCandidates, StartsConstants.AFFECTED_TEST, getArtifactsDir());
+            Writer.writeToFile(flakyTestCandidates, StartsConstants.FLAKY_TEST, getArtifactsDir());
         } else {
 //        File classDir = getClassesDirectory();
 //        File testClassDir = getTestClassesDirectory();
