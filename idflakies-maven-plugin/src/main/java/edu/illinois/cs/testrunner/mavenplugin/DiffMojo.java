@@ -10,6 +10,7 @@ import edu.illinois.starts.helpers.EkstaziHelper;
 import edu.illinois.starts.helpers.RTSUtil;
 import edu.illinois.starts.helpers.Writer;
 import edu.illinois.starts.helpers.ZLCHelper;
+import edu.illinois.starts.maven.AgentLoader;
 import edu.illinois.starts.util.Logger;
 import edu.illinois.starts.util.Pair;
 import edu.illinois.yasgl.DirectedGraph;
@@ -17,10 +18,11 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.surefire.booter.Classpath;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -45,6 +47,8 @@ public class DiffMojo extends BaseMojo implements StartsConstants {
      */
     @Parameter(property = "updateDiffChecksums", defaultValue = FALSE)
     private boolean updateDiffChecksums;
+
+    protected List<Pair> jarCheckSums = null;
 
     public void execute() throws MojoExecutionException {
         Logger.getGlobal().setLoggingLevel(Level.parse(loggingLevel));
@@ -134,5 +138,85 @@ public class DiffMojo extends BaseMojo implements StartsConstants {
             RTSUtil.saveForNextRun(artifactsDir, graph, printGraph, graphFile);
             Writer.writeClassPath(sfPathString, artifactsDir);
         }
+    }
+
+    protected void dynamicallyUpdateExcludes(List<String> excludePaths) throws MojoExecutionException {
+        if (AgentLoader.loadDynamicAgent()) {
+            log(Level.FINEST, "AGENT LOADED!!!");
+            System.setProperty(STARTS_EXCLUDE_PROPERTY, Arrays.toString(excludePaths.toArray(new String[0])));
+        } else {
+            throw new MojoExecutionException("I COULD NOT ATTACH THE AGENT");
+        }
+    }
+
+    protected boolean isSameClassPath(List<String> sfPathString) throws MojoExecutionException {
+        if (sfPathString.isEmpty()) {
+            return true;
+        }
+        String oldSfPathFileName = Paths.get(getArtifactsDir(), SF_CLASSPATH).toString();
+        if (!new File(oldSfPathFileName).exists()) {
+            return false;
+        }
+        try {
+            List<String> oldClassPathLines = Files.readAllLines(Paths.get(oldSfPathFileName));
+            if (oldClassPathLines.size() != 1) {
+                throw new MojoExecutionException(SF_CLASSPATH + " is corrupt! Expected only 1 line.");
+            }
+            List<String> oldClassPathelements = getCleanClassPath(oldClassPathLines.get(0));
+            // comparing lists and not sets in case order changes
+            if (sfPathString.equals(oldClassPathelements)) {
+                return true;
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return false;
+    }
+
+    protected boolean hasSameJarChecksum(List<String> cleanSfClassPath) throws MojoExecutionException {
+        if (cleanSfClassPath.isEmpty()) {
+            return true;
+        }
+        String oldChecksumPathFileName = Paths.get(getArtifactsDir(), JAR_CHECKSUMS).toString();
+        if (!new File(oldChecksumPathFileName).exists()) {
+            return false;
+        }
+        boolean noException = true;
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(oldChecksumPathFileName));
+            Map<String, String> checksumMap = new HashMap<>();
+            for (String line : lines) {
+                String[] elems = line.split(COMMA);
+                checksumMap.put(elems[0], elems[1]);
+            }
+            jarCheckSums = new ArrayList<>();
+            for (String path : cleanSfClassPath) {
+                Pair<String, String> pair = Writer.getJarToChecksumMapping(path);
+                jarCheckSums.add(pair);
+                String oldCS = checksumMap.get(pair.getKey());
+                noException &= pair.getValue().equals(oldCS);
+            }
+        } catch (IOException ioe) {
+            noException = false;
+            // reset to null because we don't know what/when exception happened
+            jarCheckSums = null;
+            ioe.printStackTrace();
+        }
+        return noException;
+    }
+
+    protected List<String> getCleanClassPath(String cp) {
+        List<String> cpPaths = new ArrayList<>();
+        String[] paths = cp.split(File.pathSeparator);
+        String classes = File.separator + TARGET +  File.separator + CLASSES;
+        String testClasses = File.separator + TARGET + File.separator + TEST_CLASSES;
+        for (int i = 0; i < paths.length; i++) {
+            // TODO: should we also exclude SNAPSHOTS from same project?
+            if (paths[i].contains(classes) || paths[i].contains(testClasses)) {
+                continue;
+            }
+            cpPaths.add(paths[i]);
+        }
+        return cpPaths;
     }
 }

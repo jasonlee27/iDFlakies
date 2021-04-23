@@ -83,7 +83,12 @@ abstract class BaseMojo extends SurefirePlugin implements StartsConstants {
      */
     @Parameter(property = "startsLogging", defaultValue = "CONFIG")
     protected String loggingLevel;
+    protected static final String TARGET = "target";
     private Classpath sureFireClassPath;
+
+    protected void log(Level lev, String msg) {
+        System.out.println(lev.toString() + COLON + msg);
+    }
 
     protected void printResult(Set<String> set, String title) {
         Writer.writeToLog(set, title, Logger.getGlobal());

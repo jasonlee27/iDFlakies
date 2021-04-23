@@ -39,21 +39,47 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
     @Parameter(defaultValue = "")
     private String propertiesPath;
 
-    private void log(Level lev, String msg) {
-        System.out.println(lev.toString() + COLON + msg);
-    }
+    private Set<String> nonAffectedTests;
+    // private Set<String> changedClasses;
+    private Set<String> flakyTestCandidates;
 
     public void execute() throws MojoExecutionException {
 //        Logger.getGlobal().setLoggingLevel(Level.parse(loggingLevel));
 //        logger = Logger.getGlobal();
-        long start = System.currentTimeMillis();
+
+        String cpString = Writer.pathToString(getSureFireClassPath().getClassPath());
+        List<String> sfPathElements = getCleanClassPath(cpString);
         MavenProject project = getProject();
+        long start = System.currentTimeMillis();
+        if (!isSameClassPath(sfPathElements) || !hasSameJarChecksum(sfPathElements)) {
+            // Force retestAll because classpath changed since last run
+            // don't compute changed and non-affected classes
+            dynamicallyUpdateExcludes(new ArrayList<String>());
+            // Make nonAffected empty so dependencies can be updated
+            nonAffectedTests = new HashSet<>();
+            Writer.writeClassPath(cpString, artifactsDir);
+            Writer.writeJarChecksums(sfPathElements, artifactsDir, jarCheckSums);
+            flakyTestCandidates = new HashSet<>(getTestClasses(CHECK_IF_ALL_AFFECTED));
+
+            long startUpdate = System.currentTimeMillis();
+            if (updateSelectChecksums) {
+                updateForNextRun(nonAffectedTests);
+            }
+            long endUpdate = System.currentTimeMillis();
+            log(Level.FINE, PROFILE_STARTS_MOJO_UPDATE_TIME + Writer.millsToSeconds(endUpdate - startUpdate));
+
+            Set<String> selectResult = new HashSet<>();
+            selectResult.add("#AllTests: "+flakyTestCandidates.size());
+            selectResult.add("#AffectedTests: "+flakyTestCandidates.size());
+            selectResult.add("#CandidateTests: "+flakyTestCandidates.size());
+            selectResult.add("********************");
+            printResult(selectResult, "#Selection Results");
+        } else {
 //        File classDir = getClassesDirectory();
 //        File testClassDir = getTestClassesDirectory();
-        Set<String> flakyTestCandidates = computeAffectedTests(project);
-
+            flakyTestCandidates = computeAffectedTests(project);
+        }
         runDetectorMethod(project, flakyTestCandidates);
-
         long end = System.currentTimeMillis();
         log(Level.FINE, PROFILE_RUN_MOJO_TOTAL + Writer.millsToSeconds(end - start));
         log(Level.FINE, PROFILE_TEST_RUNNING_TIME + 0.0);
@@ -73,8 +99,8 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
         Set<String> allTests = new HashSet<>(getTestClasses(CHECK_IF_ALL_AFFECTED));
         Set<String> affectedTests = new HashSet<>(allTests);
         Pair<Set<String>, Set<String>> data = computeChangeData(true);
-        Set<String> nonAffectedTests = data == null ? new HashSet<String>() : data.getKey();
-        // Set<String> changed = data == null ? new HashSet<String>() : data.getValue();
+        nonAffectedTests = data == null ? new HashSet<String>() : data.getKey();
+        // Set<String> changedClasses = data == null ? new HashSet<String>() : data.getValue();
 
         affectedTests.removeAll(nonAffectedTests);
         if (allTests.equals(nonAffectedTests)) {
