@@ -90,7 +90,13 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
         }
         long endUpdate = System.currentTimeMillis();
         log(Level.FINE, PROFILE_STARTS_MOJO_UPDATE_TIME + Writer.millsToSeconds(endUpdate - startUpdate));
-
+        Set<String> selectResult = new HashSet<>();
+        selectResult.add("#AllTests: "+allTests.size());
+        selectResult.add("#AffectedTests: "+affectedTests.size());
+        printResult(selectResult, "#Selection Results");
+        Writer.writeToFile(allTests, StartsConstants.ALL_TEST, getArtifactsDir());
+        Writer.writeToFile(affectedTests, StartsConstants.AFFECTED_TEST, getArtifactsDir());
+        
         // Find flaky test candidates
         Set<String> affectedClassesUnderTest = null;
         Set<String> flakyTestCandidates = new HashSet<>();
@@ -104,17 +110,12 @@ public class ODFlakyTestCandidatesMojo extends DiffMojo implements StartsConstan
             }
         }
         // printResult(flakyTestCandidates, "FlakyTestCandidates");
-        Writer.writeToFile(allTests, StartsConstants.ALL_TEST, getArtifactsDir());
-        Writer.writeToFile(affectedTests, StartsConstants.AFFECTED_TEST, getArtifactsDir());
         Writer.writeToFile(flakyTestCandidates, StartsConstants.FLAKY_TEST, getArtifactsDir());
 
-        Set<String> selectResult = new HashSet<>();
-        selectResult.add("#AllTests: "+allTests.size());
-        selectResult.add("#AffectedTests: "+affectedTests.size());
+        selectResult = new HashSet<>();
         selectResult.add("#CandidateTests: "+flakyTestCandidates.size());
         selectResult.add("********************");
-        printResult(selectResult, "#Selection Results");
-
+        printResult(selectResult, "#Candidates Results");
         return flakyTestCandidates;
     }
 
